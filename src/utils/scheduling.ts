@@ -94,18 +94,41 @@ function findAvailableBerth(
   return bestBerth
 }
 
+function countActiveCranesAtBerth(
+  berthId: string,
+  craneBusyUntil: Map<string, number>,
+  craneAssignments: Map<string, string>,
+  currentTime: number
+): number {
+  let count = 0
+  for (const [craneId, busyUntil] of craneBusyUntil) {
+    const assignedBerth = craneAssignments.get(craneId)
+    if (assignedBerth === berthId && busyUntil > currentTime) {
+      count++
+    }
+  }
+  return count
+}
+
 function findAvailableCrane(
   berthId: string,
+  cargoWeight: number,
   config: ScheduleConfig,
   craneBusyUntil: Map<string, number>,
+  craneAssignments: Map<string, string>,
   currentTime: number
 ): Crane | null {
   const berth = config.berths.find((b) => b.id === berthId)
   if (!berth) return null
 
-  const availableCranes = config.cranes.filter(
-    (c) => c.maxLiftWeight > 0 && (c.currentBerthId === null || c.currentBerthId === berthId)
-  )
+  const activeCount = countActiveCranesAtBerth(berthId, craneBusyUntil, craneAssignments, currentTime)
+  if (activeCount >= berth.craneCount) return null
+
+  const availableCranes = config.cranes.filter((c) => {
+    if (c.maxLiftWeight < cargoWeight) return false
+    if (c.currentBerthId !== null && c.currentBerthId !== berthId) return false
+    return true
+  })
 
   let bestCrane: Crane | null = null
   let earliestFree = Infinity
@@ -148,6 +171,7 @@ export function runSimulation(
   const operationSteps: OperationStep[] = []
   const berthOccupancies = new Map<string, BerthOccupancy>()
   const craneBusyUntil = new Map<string, number>()
+  const craneAssignments = new Map<string, string>()
   const craneWorkTime = new Map<string, number>()
   const craneOperations = new Map<string, number>()
   const craneTotalWeight = new Map<string, number>()
@@ -236,10 +260,19 @@ export function runSimulation(
       const loadQueue = shipLoadQueue.get(shipId) || []
 
       while (unloadQueue.length > 0) {
-        const crane = findAvailableCrane(berth.id, config, craneBusyUntil, currentTime)
+        const nextCargo = unloadQueue[0]
+        const crane = findAvailableCrane(
+          berth.id,
+          nextCargo.weight,
+          config,
+          craneBusyUntil,
+          craneAssignments,
+          currentTime
+        )
         if (!crane) break
 
         const cargo = unloadQueue.shift()!
+        craneAssignments.set(crane.id, berth.id)
         const craneFree = craneBusyUntil.get(crane.id) || 0
         const actualStart = Math.max(currentTime, craneFree, ship.arrivalTime + config.shipPreparationTime)
         const waitTime = Math.max(0, actualStart - (ship.arrivalTime + config.shipPreparationTime))
@@ -282,10 +315,19 @@ export function runSimulation(
       }
 
       while (unloadQueue.length === 0 && loadQueue.length > 0) {
-        const crane = findAvailableCrane(berth.id, config, craneBusyUntil, currentTime)
+        const nextCargo = loadQueue[0]
+        const crane = findAvailableCrane(
+          berth.id,
+          nextCargo.weight,
+          config,
+          craneBusyUntil,
+          craneAssignments,
+          currentTime
+        )
         if (!crane) break
 
         const cargo = loadQueue.shift()!
+        craneAssignments.set(crane.id, berth.id)
         const craneFree = craneBusyUntil.get(crane.id) || 0
 
         let unloadFinishTime = 0
