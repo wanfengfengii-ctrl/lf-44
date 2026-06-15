@@ -300,8 +300,8 @@ export function calculateBalance(cargos: Cargo[], ship: Ship): BalanceResult {
     leftRightTilt,
     frontBackTilt,
     draft,
-    draftBow: Math.max(0, draftBow),
-    draftStern: Math.max(0, draftStern),
+    draftBow: Math.max(0, Math.min(ship.hullDepth, draftBow)),
+    draftStern: Math.max(0, Math.min(ship.hullDepth, draftStern)),
     loadPercentage,
     metacentricHeight: effectiveGM,
     stabilityScore: 0,
@@ -553,7 +553,7 @@ export function calculateHoldDistribution(
   const y2 = ship.width / 2
   const y3 = ship.width
 
-  const zones = [
+  const planeZones = [
     { name: '船首左舱', x1: x3, x2: x4, y1: y1, y2: y2 },
     { name: '船首右舱', x1: x3, x2: x4, y1: y2, y2: y3 },
     { name: '船中左舱', x1: x2, x2: x3, y1: y1, y2: y2 },
@@ -562,8 +562,20 @@ export function calculateHoldDistribution(
     { name: '船尾右舱', x1: x1, x2: x2, y1: y2, y2: y3 }
   ]
 
-  return zones.map((zone) => {
+  const allZones: { name: string; x1: number; x2: number; y1: number; y2: number; deckLevel: number }[] = []
+  for (const deck of ship.decks) {
+    for (const pz of planeZones) {
+      allZones.push({
+        ...pz,
+        name: `${deck.name}-${pz.name}`,
+        deckLevel: deck.level
+      })
+    }
+  }
+
+  return allZones.map((zone) => {
     const zoneWeight = cargos.reduce((sum, cargo) => {
+      if (cargo.deckLevel !== zone.deckLevel) return sum
       const cargoCenter = getCargoCenter(cargo)
       if (
         cargoCenter.x >= zone.x1 &&
@@ -594,6 +606,18 @@ export function generateAutoStowage(
   const gridStep = 2
 
   for (const pending of sorted) {
+    let maxDeckDepth = 0
+    for (const d of ship.decks) {
+      maxDeckDepth = Math.max(maxDeckDepth, d.zEnd - d.zStart)
+    }
+    if (
+      pending.dimensions.width > ship.length ||
+      pending.dimensions.height > ship.width ||
+      pending.dimensions.depth > maxDeckDepth
+    ) {
+      continue
+    }
+
     let placed = false
 
     const deckOrder = options.priority === 'stability'
@@ -606,12 +630,18 @@ export function generateAutoStowage(
       if (placed) break
       const deck = ship.decks.find((d) => d.level === deckLevel)
       if (!deck) continue
+      if (pending.dimensions.depth > deck.zEnd - deck.zStart) continue
 
       const positions: { x: number; y: number; z: number; score: number }[] = []
 
-      for (let x = 0; x <= ship.length - pending.dimensions.width; x += gridStep) {
-        for (let y = 0; y <= ship.width - pending.dimensions.height; y += gridStep) {
-          for (let z = deck.zStart; z <= deck.zEnd - pending.dimensions.depth; z += gridStep) {
+      const xMax = ship.length - pending.dimensions.width
+      const yMax = ship.width - pending.dimensions.height
+      const zMax = deck.zEnd - pending.dimensions.depth
+      if (xMax < 0 || yMax < 0 || zMax < deck.zStart - 0.001) continue
+
+      for (let x = 0; x <= xMax + 0.001; x += gridStep) {
+        for (let y = 0; y <= yMax + 0.001; y += gridStep) {
+          for (let z = deck.zStart; z <= zMax + 0.001; z += gridStep) {
             const testCargo: Cargo = {
               id: 'test-' + generateId(),
               name: pending.name,
@@ -676,24 +706,7 @@ export function generateAutoStowage(
     }
 
     if (!placed) {
-      const defaultDeck = ship.decks[0]
-      result.push({
-        id: generateId(),
-        name: pending.name,
-        weight: pending.weight,
-        position: {
-          x: Math.random() * Math.max(1, ship.length - pending.dimensions.width),
-          y: Math.random() * Math.max(1, ship.width - pending.dimensions.height),
-          z: defaultDeck.zStart
-        },
-        dimensions: pending.dimensions,
-        color: pending.color,
-        rotate: 0,
-        stackOrder: result.length,
-        deckLevel: 0,
-        fragile: pending.fragile,
-        priority: pending.priority
-      })
+      continue
     }
   }
 

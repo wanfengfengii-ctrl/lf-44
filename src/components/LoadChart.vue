@@ -121,11 +121,15 @@ use([
 ])
 
 const store = useShipStore()
-const { ship, cargos, balance, recommendedBalance, showComparison } = storeToRefs(store)
+const { ship, cargos, balance, recommendedBalance, recommendedCargos, showComparison } = storeToRefs(store)
 
 const chartType = ref<'deck' | 'bar' | 'radar' | 'compare'>('deck')
 
 const holdDistribution = computed(() => calculateHoldDistribution(cargos.value, ship.value))
+const recommendedHoldDistribution = computed(() => {
+  if (!recommendedCargos.value) return null
+  return calculateHoldDistribution(recommendedCargos.value, ship.value)
+})
 
 const deckBarOption = computed(() => {
   const decks = balance.value.deckLoads
@@ -252,13 +256,9 @@ const radarOption = computed(() => {
   const maxWeight = Math.max(
     ship.value.maxLoad / 3,
     ...holdDistribution.value.map((d) => d.weight),
+    ...(recommendedHoldDistribution.value || []).map((d) => d.weight),
     10
   )
-
-  let recommendedData: number[] = []
-  if (recommendedBalance.value && showComparison.value) {
-    recommendedData = holdDistribution.value.map((d) => d.weight)
-  }
 
   const seriesData: any[] = [
     {
@@ -283,9 +283,9 @@ const radarOption = computed(() => {
     }
   ]
 
-  if (recommendedBalance.value) {
+  if (recommendedHoldDistribution.value) {
     seriesData.push({
-      value: holdDistribution.value.map(() => 0),
+      value: recommendedHoldDistribution.value.map((d) => parseFloat(d.weight.toFixed(2))),
       name: '推荐方案',
       areaStyle: {
         color: 'rgba(82, 196, 26, 0.2)'
@@ -306,7 +306,7 @@ const radarOption = computed(() => {
       trigger: 'item'
     },
     legend: {
-      show: !!recommendedBalance.value,
+      show: !!recommendedHoldDistribution.value,
       bottom: 0,
       itemWidth: 12,
       itemHeight: 12,
