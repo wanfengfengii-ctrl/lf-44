@@ -302,3 +302,68 @@ export interface ScheduleResult {
 }
 
 export type SimulationStatus = 'idle' | 'running' | 'paused' | 'completed'
+
+export type OptimizationStrategy = 'efficiency' | 'stability'
+
+export interface StepBalanceSnapshot {
+  stepIndex: number
+  operationType: OperationType
+  cargoName: string
+  cargoWeight: number
+  balance: BalanceResult
+  stabilityDelta: number
+  tiltDelta: number
+}
+
+export interface ShipBalanceHistory {
+  shipId: string
+  shipName: string
+  initialBalance: BalanceResult
+  stepSnapshots: StepBalanceSnapshot[]
+  finalBalance: BalanceResult
+  minStabilityScore: number
+  maxTiltAngle: number
+  safetyScore: number
+}
+
+export interface CooperativePlan {
+  id: string
+  name: string
+  strategy: OptimizationStrategy
+  scheduleResult: ScheduleResult
+  balanceHistories: ShipBalanceHistory[]
+  overallSafetyScore: number
+  averageStabilityScore: number
+  onTimeRate: number
+  totalOperationTime: number
+}
+
+export interface CooperativeComparison {
+  efficiencyPlan: CooperativePlan
+  stabilityPlan: CooperativePlan
+  metrics: {
+    metric: string
+    efficiency: string
+    stability: string
+    better: 'efficiency' | 'stability' | 'equal'
+    unit: string
+  }[]
+}
+
+export interface CooperativeConfig {
+  minStabilityThreshold: number
+  maxTiltThreshold: number
+  stabilityWeight: number
+  efficiencyWeight: number
+  enableBalancedLoading: boolean
+  enableStabilityCheckEachStep: boolean
+}
+
+export interface HoldZoneLoad {
+  zoneId: string
+  zoneName: string
+  load: number
+  maxLoad: number
+  overloadRatio: number
+  trend: 'increasing' | 'decreasing' | 'stable'
+}

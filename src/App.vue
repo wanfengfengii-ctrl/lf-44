@@ -23,6 +23,14 @@
           <span class="m-icon">⚓</span>
           港口调度
         </button>
+        <button
+          class="module-btn"
+          :class="{ active: activeModule === 'cooperative' }"
+          @click="activeModule = 'cooperative'"
+        >
+          <span class="m-icon">🔗</span>
+          协同优化
+        </button>
       </div>
 
       <div class="header-info">
@@ -31,9 +39,14 @@
             船型参数: {{ ship.length }}m × {{ ship.width }}m | 最大载重: {{ ship.maxLoad }}吨
           </span>
         </template>
-        <template v-else>
+        <template v-else-if="activeModule === 'scheduling'">
           <span class="ship-info">
             泊位: {{ schedulingStats.totalBerths }} | 吊机: {{ schedulingStats.totalCranes }} | 船舶: {{ schedulingStats.totalShips }}
+          </span>
+        </template>
+        <template v-else>
+          <span class="ship-info">
+            方案数: 2 | 策略对比: 效率最优 vs 稳性最优
           </span>
         </template>
       </div>
@@ -59,8 +72,12 @@
         </aside>
       </template>
 
-      <template v-else>
+      <template v-else-if="activeModule === 'scheduling'">
         <PortScheduling />
+      </template>
+
+      <template v-else>
+        <CooperativeOptimization />
       </template>
     </main>
   </div>
@@ -76,8 +93,9 @@ import CargoEditor from '@/components/CargoEditor.vue'
 import StatusPanel from '@/components/StatusPanel.vue'
 import LoadChart from '@/components/LoadChart.vue'
 import PortScheduling from '@/components/PortScheduling.vue'
+import CooperativeOptimization from '@/components/CooperativeOptimization.vue'
 
-const activeModule = ref<'stowage' | 'scheduling'>('scheduling')
+const activeModule = ref<'stowage' | 'scheduling' | 'cooperative'>('cooperative')
 
 const shipStore = useShipStore()
 const schedulingStore = useSchedulingStore()
