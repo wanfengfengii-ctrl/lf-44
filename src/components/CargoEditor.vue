@@ -44,23 +44,25 @@
       </div>
 
       <div class="form-group">
-        <label>重量 (吨)</label>
+        <label>重量 (吨) <span class="range-hint">(0.1 ~ {{ ship.maxLoad }})</span></label>
         <input
           type="number"
           min="0.1"
+          :max="ship.maxLoad"
           step="0.1"
           :value="selectedCargo.weight"
-          @input="handleUpdate('weight', parseFloat(($event.target as HTMLInputElement).value) || 0)"
+          @input="handleWeightUpdate(parseFloat(($event.target as HTMLInputElement).value) || 0)"
         />
         <span v-if="selectedCargo.weight <= 0" class="error-msg">重量必须大于零</span>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label>宽度 (米)</label>
+          <label>宽度 (米) <span class="range-hint">(0.1 ~ {{ ship.length }})</span></label>
           <input
             type="number"
             min="0.1"
+            :max="ship.length"
             step="0.5"
             :value="selectedCargo.dimensions.width"
             @input="handleDimensionUpdate('width', parseFloat(($event.target as HTMLInputElement).value) || 0)"
@@ -68,10 +70,11 @@
           <span v-if="selectedCargo.dimensions.width <= 0" class="error-msg">必须大于零</span>
         </div>
         <div class="form-group">
-          <label>高度 (米)</label>
+          <label>高度 (米) <span class="range-hint">(0.1 ~ {{ ship.width }})</span></label>
           <input
             type="number"
             min="0.1"
+            :max="ship.width"
             step="0.5"
             :value="selectedCargo.dimensions.height"
             @input="handleDimensionUpdate('height', parseFloat(($event.target as HTMLInputElement).value) || 0)"
@@ -82,10 +85,11 @@
 
       <div class="form-row">
         <div class="form-group">
-          <label>深度 (米)</label>
+          <label>深度 (米) <span class="range-hint">(0.1 ~ {{ ship.hullDepth }})</span></label>
           <input
             type="number"
             min="0.1"
+            :max="ship.hullDepth"
             step="0.5"
             :value="selectedCargo.dimensions.depth"
             @input="handleDimensionUpdate('depth', parseFloat(($event.target as HTMLInputElement).value) || 0)"
@@ -105,24 +109,32 @@
 
       <div class="form-row">
         <div class="form-group">
-          <label>位置 X (米)</label>
+          <label>位置 X (米) <span class="range-hint">(0 ~ {{ maxX.toFixed(1) }})</span></label>
           <input
             type="number"
             min="0"
+            :max="maxX"
             step="0.5"
             :value="selectedCargo.position.x"
             @input="handlePositionUpdate('x', parseFloat(($event.target as HTMLInputElement).value) || 0)"
           />
+          <span v-if="selectedCargo.position.x < 0 || selectedCargo.position.x > maxX" class="error-msg">
+            X坐标超出范围
+          </span>
         </div>
         <div class="form-group">
-          <label>位置 Y (米)</label>
+          <label>位置 Y (米) <span class="range-hint">(0 ~ {{ maxY.toFixed(1) }})</span></label>
           <input
             type="number"
             min="0"
+            :max="maxY"
             step="0.5"
             :value="selectedCargo.position.y"
             @input="handlePositionUpdate('y', parseFloat(($event.target as HTMLInputElement).value) || 0)"
           />
+          <span v-if="selectedCargo.position.y < 0 || selectedCargo.position.y > maxY" class="error-msg">
+            Y坐标超出范围
+          </span>
         </div>
       </div>
     </div>
@@ -134,12 +146,23 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useShipStore } from '@/stores/shipStore'
 
 const store = useShipStore()
-const { cargos, selectedCargoId, selectedCargo } = storeToRefs(store)
+const { ship, cargos, selectedCargoId, selectedCargo } = storeToRefs(store)
 const { addCargo, updateCargo, removeCargo, selectCargo } = store
+
+const maxX = computed(() => {
+  if (!selectedCargo.value) return ship.value.length
+  return Math.max(0, ship.value.length - selectedCargo.value.dimensions.width)
+})
+
+const maxY = computed(() => {
+  if (!selectedCargo.value) return ship.value.width
+  return Math.max(0, ship.value.width - selectedCargo.value.dimensions.height)
+})
 
 function handleAddCargo() {
   addCargo()
@@ -155,23 +178,43 @@ function handleUpdate(key: string, value: any) {
   }
 }
 
+function handleWeightUpdate(value: number) {
+  if (selectedCargoId.value) {
+    const safeValue = Math.min(Math.max(0.1, value), ship.value.maxLoad)
+    updateCargo(selectedCargoId.value, { weight: safeValue })
+  }
+}
+
 function handleDimensionUpdate(key: string, value: number) {
   if (selectedCargoId.value && selectedCargo.value) {
+    const safeValue = Math.max(0.1, value)
+    const newDimensions = {
+      ...selectedCargo.value.dimensions,
+      [key]: safeValue
+    }
+
+    const newMaxX = Math.max(0, ship.value.length - newDimensions.width)
+    const newMaxY = Math.max(0, ship.value.width - newDimensions.height)
+    const newPosition = {
+      x: Math.min(Math.max(0, selectedCargo.value.position.x), newMaxX),
+      y: Math.min(Math.max(0, selectedCargo.value.position.y), newMaxY)
+    }
+
     updateCargo(selectedCargoId.value, {
-      dimensions: {
-        ...selectedCargo.value.dimensions,
-        [key]: value
-      }
+      dimensions: newDimensions,
+      position: newPosition
     })
   }
 }
 
-function handlePositionUpdate(key: string, value: number) {
+function handlePositionUpdate(key: 'x' | 'y', value: number) {
   if (selectedCargoId.value && selectedCargo.value) {
+    const max = key === 'x' ? maxX.value : maxY.value
+    const safeValue = Math.min(Math.max(0, value), max)
     updateCargo(selectedCargoId.value, {
       position: {
         ...selectedCargo.value.position,
-        [key]: Math.max(0, value)
+        [key]: safeValue
       }
     })
   }
@@ -305,6 +348,12 @@ function handlePositionUpdate(key: string, value: number) {
 
 .form-row .form-group {
   flex: 1;
+}
+
+.range-hint {
+  font-size: 11px;
+  color: #999;
+  font-weight: normal;
 }
 
 .error-msg {

@@ -200,11 +200,20 @@ const stageConfig = computed(() => ({
 
 const holdZones = computed(() => {
   const s = ship.value
+  const x1 = 0
+  const x2 = s.length / 3
+  const x3 = s.length * 2 / 3
+  const x4 = s.length
+  const y1 = 0
+  const y2 = s.width / 2
+  const y3 = s.width
   return [
-    { name: '船首左舱', x: s.length * 0.5, y: 0, width: s.length * 0.5, height: s.width * 0.5 },
-    { name: '船首右舱', x: s.length * 0.5, y: s.width * 0.5, width: s.length * 0.5, height: s.width * 0.5 },
-    { name: '船尾左舱', x: 0, y: 0, width: s.length * 0.5, height: s.width * 0.5 },
-    { name: '船尾右舱', x: 0, y: s.width * 0.5, width: s.length * 0.5, height: s.width * 0.5 }
+    { name: '船首左舱', x: x3, y: y1, width: x4 - x3, height: y2 - y1 },
+    { name: '船首右舱', x: x3, y: y2, width: x4 - x3, height: y3 - y2 },
+    { name: '船中左舱', x: x2, y: y1, width: x3 - x2, height: y2 - y1 },
+    { name: '船中右舱', x: x2, y: y2, width: x3 - x2, height: y3 - y2 },
+    { name: '船尾左舱', x: x1, y: y1, width: x2 - x1, height: y2 - y1 },
+    { name: '船尾右舱', x: x1, y: y2, width: x2 - x1, height: y3 - y2 }
   ]
 })
 

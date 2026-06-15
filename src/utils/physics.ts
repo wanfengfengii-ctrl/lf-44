@@ -240,13 +240,21 @@ export function calculateHoldDistribution(
   cargos: Cargo[],
   ship: Ship
 ): { name: string; weight: number }[] {
+  const x1 = 0
+  const x2 = ship.length / 3
+  const x3 = ship.length * 2 / 3
+  const x4 = ship.length
+  const y1 = 0
+  const y2 = ship.width / 2
+  const y3 = ship.width
+
   const zones = [
-    { name: '船首左舱', x1: ship.length * 0.5, x2: ship.length, y1: 0, y2: ship.width * 0.5 },
-    { name: '船首右舱', x1: ship.length * 0.5, x2: ship.length, y1: ship.width * 0.5, y2: ship.width },
-    { name: '船中左舱', x1: ship.length * 0.25, x2: ship.length * 0.75, y1: 0, y2: ship.width * 0.5 },
-    { name: '船中右舱', x1: ship.length * 0.25, x2: ship.length * 0.75, y1: ship.width * 0.5, y2: ship.width },
-    { name: '船尾左舱', x1: 0, x2: ship.length * 0.5, y1: 0, y2: ship.width * 0.5 },
-    { name: '船尾右舱', x1: 0, x2: ship.length * 0.5, y1: ship.width * 0.5, y2: ship.width }
+    { name: '船首左舱', x1: x3, x2: x4, y1: y1, y2: y2 },
+    { name: '船首右舱', x1: x3, x2: x4, y1: y2, y2: y3 },
+    { name: '船中左舱', x1: x2, x2: x3, y1: y1, y2: y2 },
+    { name: '船中右舱', x1: x2, x2: x3, y1: y2, y2: y3 },
+    { name: '船尾左舱', x1: x1, x2: x2, y1: y1, y2: y2 },
+    { name: '船尾右舱', x1: x1, x2: x2, y1: y2, y2: y3 }
   ]
 
   return zones.map((zone) => {
