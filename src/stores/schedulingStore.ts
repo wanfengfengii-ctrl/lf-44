@@ -14,8 +14,9 @@ import type {
 import {
   getDefaultScheduleConfig,
   getDefaultShipTasks,
-  runSimulation
-} from '@/utils/scheduling'
+  runSimulation,
+  genShortId
+} from '@/domain'
 
 export const useSchedulingStore = defineStore('scheduling', () => {
   const config = ref<ScheduleConfig>(getDefaultScheduleConfig())
@@ -38,7 +39,7 @@ export const useSchedulingStore = defineStore('scheduling', () => {
   function addBerth(berth: Omit<Berth, 'id'>) {
     const newBerth: Berth = {
       ...berth,
-      id: `b${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+      id: `b${genShortId()}`
     }
     config.value.berths.push(newBerth)
   }
@@ -57,7 +58,7 @@ export const useSchedulingStore = defineStore('scheduling', () => {
   function addCrane(crane: Omit<Crane, 'id'>) {
     const newCrane: Crane = {
       ...crane,
-      id: `c${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+      id: `c${genShortId()}`
     }
     config.value.cranes.push(newCrane)
   }
@@ -76,7 +77,7 @@ export const useSchedulingStore = defineStore('scheduling', () => {
   function addShift(shift: Omit<WorkShift, 'id'>) {
     const newShift: WorkShift = {
       ...shift,
-      id: `s${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+      id: `s${genShortId()}`
     }
     config.value.shifts.push(newShift)
   }
@@ -107,7 +108,7 @@ export const useSchedulingStore = defineStore('scheduling', () => {
   function addShipTask(ship: Omit<ShipTask, 'id'>) {
     const newShip: ShipTask = {
       ...ship,
-      id: `ship${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+      id: `ship${genShortId()}`
     }
     shipTasks.value.push(newShip)
   }
@@ -132,7 +133,7 @@ export const useSchedulingStore = defineStore('scheduling', () => {
     if (!ship) return
     const newCargo: CargoTask = {
       ...cargo,
-      id: `${operationType[0]}${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      id: `${operationType[0]}${genShortId()}`,
       operationType,
       shipId
     }

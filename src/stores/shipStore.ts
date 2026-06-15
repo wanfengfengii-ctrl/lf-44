@@ -1,31 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Cargo, Ship, BalanceResult, ValidationResult, PendingCargo, PlanComparison, AutoStowageOptions } from '@/types'
+import type { Cargo, PendingCargo, AutoStowageOptions } from '@/types'
 import {
   calculateBalance,
   validateLoadingPlan,
+  generateAutoStowage,
+  comparePlans,
   generateId,
   getCargoColor,
-  generateDefaultDecks,
-  generateAutoStowage,
-  comparePlans
-} from '@/utils/physics'
+  createDefaultShip
+} from '@/domain'
+import type { Ship, BalanceResult, ValidationResult, PlanComparison } from '@/types'
 
 export const useShipStore = defineStore('ship', () => {
-  const ship = ref<Ship>({
-    length: 100,
-    width: 30,
-    maxLoad: 500,
-    hullDepth: 6,
-    leftRightBalanceThreshold: 0.15,
-    frontBackBalanceThreshold: 0.2,
-    decks: [],
-    maxStackWeight: 100,
-    metacentricHeight: 1.5,
-    lightDisplacement: 200
-  })
-
-  ship.value.decks = generateDefaultDecks(ship.value)
+  const ship = ref<Ship>(createDefaultShip())
 
   const cargos = ref<Cargo[]>([])
   const pendingCargos = ref<PendingCargo[]>([])
@@ -261,9 +249,6 @@ export const useShipStore = defineStore('ship', () => {
 
   function updateShipConfig(updates: Partial<Ship>) {
     ship.value = { ...ship.value, ...updates }
-    if (!updates.decks) {
-      ship.value.decks = generateDefaultDecks(ship.value)
-    }
   }
 
   return {

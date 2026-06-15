@@ -227,7 +227,7 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSchedulingStore } from '@/stores/schedulingStore'
 import { useShipStore } from '@/stores/shipStore'
-import { formatTime, formatDuration } from '@/utils/scheduling'
+import { formatTime, formatDuration } from '@/domain'
 import type { OperationType } from '@/types'
 
 const store = useSchedulingStore()

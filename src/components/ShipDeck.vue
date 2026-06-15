@@ -306,7 +306,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useShipStore } from '@/stores/shipStore'
 import type { Cargo } from '@/types'
-import { checkOverlapWithOthers, isCargoWithinShip } from '@/utils/physics'
+import { checkOverlapWithOthers, isCargoWithinShip } from '@/domain'
 
 const store = useShipStore()
 const {

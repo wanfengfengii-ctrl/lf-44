@@ -155,7 +155,7 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { useSchedulingStore } from '@/stores/schedulingStore'
-import { formatTime } from '@/utils/scheduling'
+import { formatTime } from '@/domain'
 import type { SimulationStatus } from '@/types'
 
 use([

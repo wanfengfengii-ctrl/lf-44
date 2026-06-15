@@ -106,7 +106,7 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { useShipStore } from '@/stores/shipStore'
-import { calculateHoldDistribution } from '@/utils/physics'
+import { calculateHoldDistribution } from '@/domain'
 
 use([
   CanvasRenderer,

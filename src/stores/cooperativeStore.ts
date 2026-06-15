@@ -12,7 +12,7 @@ import {
   generateCooperativePlan,
   compareCooperativePlans,
   getDefaultCooperativeConfig
-} from '@/utils/scheduling'
+} from '@/domain'
 import { useSchedulingStore } from '@/stores/schedulingStore'
 import { useShipStore } from '@/stores/shipStore'
 
@@ -30,12 +30,17 @@ export const useCooperativeStore = defineStore('cooperative', () => {
   const playbackSpeed = ref(1)
 
   const currentPlan = computed(() => {
-    return currentStrategy.value === 'efficiency' ? efficiencyPlan.value : stabilityPlan.value
+    return currentStrategy.value === 'efficiency'
+      ? efficiencyPlan.value
+      : stabilityPlan.value
   })
 
   const currentShipHistory = computed((): ShipBalanceHistory | null => {
     if (!currentPlan.value || !selectedShipId.value) return null
-    return currentPlan.value.balanceHistories.find(h => h.shipId === selectedShipId.value) || null
+    return (
+      currentPlan.value.balanceHistories.find((h) => h.shipId === selectedShipId.value) ||
+      null
+    )
   })
 
   const currentStepSnapshot = computed((): StepBalanceSnapshot | null => {
@@ -65,7 +70,10 @@ export const useCooperativeStore = defineStore('cooperative', () => {
 
   function setStepIndex(index: number) {
     if (!currentShipHistory.value) return
-    currentStepIndex.value = Math.max(-1, Math.min(currentShipHistory.value.stepSnapshots.length - 1, index))
+    currentStepIndex.value = Math.max(
+      -1,
+      Math.min(currentShipHistory.value.stepSnapshots.length - 1, index)
+    )
   }
 
   function nextStep() {
@@ -106,7 +114,10 @@ export const useCooperativeStore = defineStore('cooperative', () => {
       )
 
       if (efficiencyPlan.value && stabilityPlan.value) {
-        comparison.value = compareCooperativePlans(efficiencyPlan.value, stabilityPlan.value)
+        comparison.value = compareCooperativePlans(
+          efficiencyPlan.value,
+          stabilityPlan.value
+        )
       }
 
       if (allShips.value.length > 0) {
@@ -133,7 +144,8 @@ export const useCooperativeStore = defineStore('cooperative', () => {
   }
 
   function startPlayback() {
-    if (!currentShipHistory.value || currentShipHistory.value.stepSnapshots.length === 0) return
+    if (!currentShipHistory.value || currentShipHistory.value.stepSnapshots.length === 0)
+      return
     playbackStatus.value = 'playing'
     if (currentStepIndex.value >= currentShipHistory.value.stepSnapshots.length - 1) {
       currentStepIndex.value = -1
